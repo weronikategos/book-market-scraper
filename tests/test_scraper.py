@@ -52,3 +52,16 @@ def test_save_books_skips_duplicates_and_analysis_runs(tmp_path):
     make_charts(df, tmp_path / "charts")
     assert (tmp_path / "charts" / "price_distribution.png").exists()
     assert (tmp_path / "charts" / "top_categories.png").exists()
+
+
+def test_well_rated_categories_query(tmp_path):
+    db = tmp_path / "books.db"
+    conn = sqlite3.connect(db)
+    init_db(conn)
+    books = [{"title": f"B{i}", "url": f"u{i}", "price_gbp": 10.0 + i, "rating": 5 if i < 6 else 2,
+              "in_stock": True, "category": "Poetry"} for i in range(8)]
+    save_books(conn, books)
+    conn.close()
+    result = run_queries(db)["Most expensive categories among well-rated books (4-5 stars)"]
+    assert result.iloc[0]["category"] == "Poetry"
+    assert result.iloc[0]["books"] == 6

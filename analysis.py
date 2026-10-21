@@ -20,6 +20,11 @@ QUERIES = {
     "5 most expensive 5-star books": """
         SELECT title, price_gbp FROM books
         WHERE rating = 5 ORDER BY price_gbp DESC LIMIT 5""",
+    "Most expensive categories among well-rated books (4-5 stars)": """
+        SELECT category, COUNT(*) AS books, ROUND(AVG(price_gbp), 2) AS avg_price
+        FROM books WHERE rating >= 4 AND category IS NOT NULL
+        GROUP BY category HAVING COUNT(*) >= 5
+        ORDER BY avg_price DESC LIMIT 10""",
 }
 
 
