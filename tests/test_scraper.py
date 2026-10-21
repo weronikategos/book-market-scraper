@@ -45,7 +45,7 @@ def test_save_books_skips_duplicates_and_analysis_runs(tmp_path):
     conn.close()
 
     results = run_queries(db)
-    assert results["Top 10 kategorii wg liczby książek"].iloc[0]["books"] == 2
+    assert results["Top 10 categories by number of books"].iloc[0]["books"] == 2
 
     with sqlite3.connect(db) as c:
         df = pd.read_sql_query("SELECT * FROM books", c)

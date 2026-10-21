@@ -1,6 +1,6 @@
-"""Pobiera dane o książkach ze strony books.toscrape.com i zapisuje je do bazy SQLite.
+"""Scrapes book data from books.toscrape.com and saves it to an SQLite database.
 
-books.toscrape.com to strona stworzona specjalnie do nauki web scrapingu.
+books.toscrape.com is a site built specifically for practising web scraping.
 """
 import argparse
 import sqlite3
@@ -16,7 +16,7 @@ RATINGS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
 
 
 def parse_books(html, page_url):
-    """Zwraca listę książek z jednej strony katalogu oraz adres następnej strony."""
+    """Returns the books from one catalogue page and the URL of the next page."""
     soup = BeautifulSoup(html, "html.parser")
     books = []
     for card in soup.select("article.product_pod"):
@@ -37,7 +37,7 @@ def parse_books(html, page_url):
 
 
 def parse_category(html):
-    """Ze strony szczegółów książki odczytuje jej kategorię."""
+    """Reads the book's category from its detail page."""
     soup = BeautifulSoup(html, "html.parser")
     crumbs = soup.select("ul.breadcrumb li a")
     return crumbs[-1].get_text(strip=True) if len(crumbs) >= 3 else None
@@ -58,7 +58,7 @@ def init_db(conn):
 
 
 def save_books(conn, books):
-    """Zapisuje książki; te same adresy URL nie są dublowane."""
+    """Saves books; a URL that is already stored is not duplicated."""
     conn.executemany(
         """INSERT OR IGNORE INTO books (title, url, price_gbp, rating, in_stock, category)
            VALUES (:title, :url, :price_gbp, :rating, :in_stock, :category)""",
@@ -69,7 +69,7 @@ def save_books(conn, books):
 
 def scrape(db_path, max_pages, delay, with_categories):
     session = requests.Session()
-    session.headers["User-Agent"] = "book-market-scraper (projekt edukacyjny)"
+    session.headers["User-Agent"] = "book-market-scraper (educational project)"
     conn = sqlite3.connect(db_path)
     init_db(conn)
 
@@ -89,21 +89,21 @@ def scrape(db_path, max_pages, delay, with_categories):
                 book["category"] = parse_category(detail.text)
                 time.sleep(delay)
         save_books(conn, books)
-        print(f"Strona {page}: zapisano {len(books)} książek")
+        print(f"Page {page}: saved {len(books)} books")
         time.sleep(delay)
 
     total = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
     conn.close()
-    print(f"Gotowe. W bazie jest {total} książek.")
+    print(f"Done. The database contains {total} books.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Scraper książek z books.toscrape.com")
-    parser.add_argument("--db", default="books.db", help="plik bazy SQLite")
-    parser.add_argument("--pages", type=int, default=50, help="ile stron katalogu pobrać (max 50)")
-    parser.add_argument("--delay", type=float, default=0.5, help="przerwa między zapytaniami w sekundach")
+    parser = argparse.ArgumentParser(description="Book scraper for books.toscrape.com")
+    parser.add_argument("--db", default="books.db", help="SQLite database file")
+    parser.add_argument("--pages", type=int, default=50, help="how many catalogue pages to scrape (max 50)")
+    parser.add_argument("--delay", type=float, default=0.5, help="pause between requests in seconds")
     parser.add_argument("--no-categories", action="store_true",
-                        help="nie pobieraj kategorii (szybciej, 1 zapytanie na stronę)")
+                        help="skip categories (faster, 1 request per page)")
     args = parser.parse_args()
     scrape(args.db, args.pages, args.delay, not args.no_categories)
 
