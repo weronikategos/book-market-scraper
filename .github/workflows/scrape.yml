@@ -1,0 +1,30 @@
+name: weekly scrape
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # every Monday at 6:00 UTC
+  workflow_dispatch:     # "Run workflow" button in the Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Scrape the catalogue
+        run: python scraper.py --db books.db
+      - name: Analyse and draw charts
+        run: python analysis.py --db books.db --out charts
+      - name: Upload the results
+        uses: actions/upload-artifact@v4
+        with:
+          name: books-${{ github.run_number }}
+          path: |
+            books.db
+            charts/
+          retention-days: 30
